@@ -51,11 +51,9 @@ jobs:
           fi
         continue-on-error: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Create issue with detailed validation results when validation fails
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      # Create issue with detailed validation results when validation fails
       - name: Create Issue with Validation Results
-        if: ${{ steps.validate.outputs.status == 'failed' && github.event_name == 'push' }}
+        if: ${{ steps.validate.outputs.status == 'failed' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
