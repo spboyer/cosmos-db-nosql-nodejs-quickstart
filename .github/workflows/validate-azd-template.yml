@@ -20,9 +20,6 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Dependencies for Node.js
-        run: npm install
-
       - name: Install Azure Developer CLI
         run: |
           curl -fsSL https://aka.ms/install-azd.sh | bash
