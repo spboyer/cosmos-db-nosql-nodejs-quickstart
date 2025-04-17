@@ -89,22 +89,45 @@ jobs:
             
             const criticalIssues = criticalIssuesMatch ? criticalIssuesMatch[1].trim() : '';
             const warnings = warningsMatch ? warningsMatch[1].trim() : '';
-            
-            // Build issue body with proper escaping for YAML
+              // Build issue body with improved Markdown formatting
             let issueBody = `# Template Validation Failed\n\n`;
-            issueBody += `Template validation found issues in commit ${context.sha.substring(0, 7)}.\n\n`;
+            issueBody += `📝 Template validation found issues in commit \`${context.sha.substring(0, 7)}\`.\n\n`;
             issueBody += `## Validation Results\n\n`;
             
             if (criticalIssues) {
-              issueBody += `### Critical Issues\n${criticalIssues}\n\n`;
+              // Format critical issues with proper bullet points and code formatting
+              const formattedCriticalIssues = criticalIssues
+                .split('\n')
+                .map(line => {
+                  if (line.trim().startsWith('-')) {
+                    // Format each bullet point with better spacing and emphasis
+                    return line.replace(/^- (.+)$/, '- **$1**');
+                  }
+                  return line;
+                })
+                .join('\n');
+              
+              issueBody += `### ❌ Critical Issues\n${formattedCriticalIssues}\n\n`;
             }
             
             if (warnings) {
-              issueBody += `### Warnings and Recommendations\n${warnings}\n\n`;
+              // Format warnings with proper bullet points and code formatting
+              const formattedWarnings = warnings
+                .split('\n')
+                .map(line => {
+                  if (line.trim().startsWith('-')) {
+                    // Format each bullet point with code highlighting where appropriate
+                    return line.replace(/^- (.+?)(\s+in\s+|\s+for\s+)(.+)$/, '- $1$2`$3`');
+                  }
+                  return line;
+                })
+                .join('\n');
+              
+              issueBody += `### ⚠️ Warnings and Recommendations\n${formattedWarnings}\n\n`;
             }
             
             issueBody += `<details>\n<summary>Full Validation Output</summary>\n\n\`\`\`\n${validationOutput}\n\`\`\`\n\n</details>\n\n`;
-            issueBody += `Please address these issues before merging. For more information, see the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+            issueBody += `---\n\n📌 Please address these issues before merging. For more information, see the [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
             
             // Create issue with formatted validation results
             await github.rest.issues.create({
