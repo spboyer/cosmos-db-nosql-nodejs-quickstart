@@ -1,3 +1,4 @@
+# filepath: c:\github\mcp\mcp-azd-template\src\github-workflow-templates\validate-azd-template.yml
 name: Validate Azure Developer CLI Template
 
 on:
@@ -6,6 +7,7 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+    # Additional inputs for manual runs can be defined here if needed
 
 jobs:
   validate:
@@ -19,32 +21,39 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Install Azure Developer CLI
         run: |
           curl -fsSL https://aka.ms/install-azd.sh | bash
 
       - name: Install mcp-azd-template
-        run: npm install -g mcp-azd-template      # Run validation and capture the output for potential issue creation
+        run: npm install -g mcp-azd-template
+
       - name: Validate AZD Template and Capture Output
         id: validate
         run: |
-          # Run validation and capture output to a file
+          # Run validation and save output to a file
+          set +e  # Don't exit on error
           mcp-azd-template validate-action "${{ github.workspace }}" > validation_output.txt 2>&1
+          EXIT_CODE=$?
           
-          # Check if the validation failed
-          if [ $? -ne 0 ]; then
+          # Always display the output for better debugging (useful for workflow_dispatch runs)
+          echo "Validation output:"
+          cat validation_output.txt
+          
+          # Set the status based on exit code
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Validation failed with exit code: $EXIT_CODE"
             echo "status=failed" >> $GITHUB_OUTPUT
-            cat validation_output.txt
           else
+            echo "Validation succeeded!"
             echo "status=success" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
-        # Pass the GitHub token to allow issue creation if enabled
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            # Create issue with detailed validation results when validation fails
+
+      # Create issue with detailed validation results when validation fails
       - name: Create Issue with Validation Results
         if: ${{ steps.validate.outputs.status == 'failed' && github.event_name == 'push' }}
         uses: actions/github-script@v6
@@ -90,5 +99,4 @@ jobs:
               repo: context.repo.repo,
               title: 'AZD Template Validation Failed',
               body: issueBody
-            });
             });
